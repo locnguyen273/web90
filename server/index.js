@@ -1,75 +1,153 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { customers, orders, products } from "./data.js";
 
 const app = express();
 app.use(express.json());
 
-// phương thức get với base API http://localhost:8080/hello
-// 4 phương thúc chính là GET, POST, PUT, DELETE
-app.get("/hello", (req, res) => {
-  res.send({ message: "hello mindx" });
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dataPath = path.join(__dirname, "data.json");
 
-// bài 1 viết api trả về danh sách customers
+const readData = () => {
+  const data = fs.readFileSync(dataPath, "utf8");
+  return JSON.parse(data);
+};
+
+const writeData = (data) => {
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), "utf8");
+};
+
+// bài 1
 app.get("/customers", (req, res) => {
-  const listCustomer = customers;
+  const data = readData();
+  const customers = data?.customers;
   res.send({
-    data: listCustomer.length > 0 ? listCustomer : [],
-    total: listCustomer.length,
+    data: customers?.length > 0 ? customers : [],
+    total: customers?.length,
   });
 });
 
-// viết api get customer detail
+// bài 2
 app.get("/customers/:id", (req, res) => {
   const { id } = req.params;
-  const foundCustomerDetail = customers.find((customer) => customer.id === id);
-  if (foundCustomerDetail) {
-    res.send({ data: foundCustomerDetail }); // trong cái response api sẽ trả về { data: ..., message: ..., status: true/ false }
-  } else res.status(404).send({ message: "Customer not found !!!" });
+  const data = readData();
+  const customers = data?.customers;
+  const customerExisted = customers.find((customer) => customer.id === id);
+  if (customerExisted) {
+    res.send({
+      data: customerExisted,
+    });
+  } else {
+    res.send({
+      message: "Customer not found",
+    });
+  }
 });
 
-// viết api lấy danh sách đơn hàng của 1 khách hàng cụ thể endpoint: /customers/:customerId/orders
+// bài 3 /customers/:customerId/orders
 app.get("/customers/:customerId/orders", (req, res) => {
   const { customerId } = req.params;
-  const foundListOrder = orders.filter(
-    (orders) => orders.customerId === customerId
+  const data = readData();
+  const listOrdersFound = data?.orders.filter(
+    (order) => order.customerId === customerId
   );
-  res.send({ data: foundListOrder });
+  res.send({ data: listOrdersFound });
 });
 
+// bài 4
 app.get("/orders/high-value", (req, res) => {
-  const foundOrderHigh = orders.filter((order) => order.totalPrice >= 10000000);
-  res.send({ data: foundOrderHigh });
+  const data = readData();
+  const listOrderHighValue = data?.orders.filter(
+    (order) => order.totalPrice >= 10000000
+  );
+  res.send({ data: listOrderHighValue });
 });
 
+// bài 5
 app.get("/products", (req, res) => {
   const { minPrice, maxPrice } = req.query;
   const minPriceValue = minPrice ? Number(minPrice) : null;
   const maxPriceValue = maxPrice ? Number(maxPrice) : null;
+  const data = readData();
   let listProduct = [];
   if (!!minPrice && !!maxPrice) {
-    listProduct = products.filter(
+    listProduct = data?.products.filter(
       (pro) => pro.price >= minPriceValue && pro.price <= maxPriceValue
     );
   } else if (!!minPriceValue) {
-    listProduct = products.filter((pro) => pro.price >= minPriceValue);
+    listProduct = data?.products.filter((pro) => pro.price >= minPriceValue);
   } else if (!!maxPriceValue) {
-    listProduct = products.filter((pro) => pro.price <= maxPriceValue);
+    listProduct = data?.products.filter((pro) => pro.price <= maxPriceValue);
   }
   res.send({ data: listProduct });
 });
 
-// viết api thêm customer mới
+// bài 6 thêm mới khách hàng
 app.post("/customers", (req, res) => {
-  const { email, name, age } = req.body;
-  const foundCustomer = customers.find((cus) => cus.email === email);
-  if (foundCustomer) {
-    res.status(404).send({ message: "Customer is existed" });
+  const { name, email, age } = req.body;
+  if (!name || !email || !age)
+    res
+      .status(404)
+      .send({ message: "Vui lòng nhập đủ thông tin email, name, age" });
+
+  let data = readData();
+  const emailExisted = data?.customers.some(
+    (customer) => customer.email.toLowerCase() === email.toLowerCase()
+  );
+  if (emailExisted) {
+    res.status(400).send({ message: "Email đã tồn tại." });
   } else {
-    const newCustomer = { id: uuidv4(), email, name, age };
-    // const newListCustomer = [...customers, { id: uuidv4(), email, name, age }];
+    const newCustomer = { id: uuidv4(), name, email, age };
+    data.customers.push(newCustomer);
+    writeData(data);
     res.status(201).send({ data: newCustomer });
+  }
+});
+
+// bài 7 tạo mới 1 đơn hàng
+app.post("/orders", (req, res) => {
+  const { customerId, productId, quantity } = req.body;
+  const orderId = uuidv4();
+  if (!customerId || !productId || !quantity)
+    res.status(404).send({
+      message: "Vui lòng nhập đủ thông tin customerId, productId, quantity",
+    });
+
+  let data = readData();
+  const customerExisted = data?.customers.find((cus) => cus.id === customerId);
+  if (!customerExisted)
+    res.status(404).send({ message: "Customer not found. " });
+
+  const productExisted = data?.products.find((pro) => pro.id === productId);
+  if (!productExisted) res.status(404).send({ message: "Product not found. " });
+
+  const orderIdExisted = data?.orders.some((ord) => ord.id === orderId);
+  if (!orderIdExisted) {
+    const totalPrice = productExisted.price * quantity;
+    // tạo đơn hàng mới
+    const newOrder = {
+      id: orderId,
+      customerId,
+      productId,
+      quantity,
+      totalPrice,
+    };
+
+    if (quantity <= 0 || quantity > productExisted.quantity) {
+      res
+        .status(400)
+        .send({ message: "Số lượng không hợp lệ hoặc vượt quá tồn kho." });
+    } else {
+      data.orders.push(newOrder);
+      productExisted.quantity -= quantity;
+      writeData(data);
+      res.status(201).send({ data: newOrder });
+    }
+  } else {
+    res.status(400).send({ message: "Order đã tồn tại." });
   }
 });
 
