@@ -120,7 +120,7 @@
       "id": "p009",
       "name": "Pin dự phòng",
       "price": 600000,
-      "quantity": 110
+      "quantity": 109
     },
     {
       "id": "p010",
@@ -206,6 +206,13 @@
       "productId": "p001",
       "quantity": 2,
       "totalPrice": 14000000
+    },
+    {
+      "id": "8a9f84d6-f961-4ec2-ad77-44cec71e8cde",
+      "customerId": "c010",
+      "productId": "p009",
+      "quantity": 1,
+      "totalPrice": 600000
     }
   ]
 }
