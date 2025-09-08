@@ -2,7 +2,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import * as dotenv from "dotenv";
 import connectedDatabase from "./configs/connect-db.js";
-import { AuthRouter, CustomerRouter, OrderRouter, ProductRouter } from "./routes/index.js"
+import { AuthRouter, ProfileRouter } from "./routes/index.js"
 
 dotenv.config();
 const app = express();
@@ -14,9 +14,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/auth", AuthRouter);
-app.use("/customers", CustomerRouter);
-app.use("/orders", OrderRouter);
-app.use("/products", ProductRouter);
+app.use("/profile", ProfileRouter);
+// app.use("/customers", CustomerRouter);
+// app.use("/orders", OrderRouter);
+// app.use("/products", ProductRouter);
 
 // app.use("*", (req, res) => {
 //   res.status(404).json({
