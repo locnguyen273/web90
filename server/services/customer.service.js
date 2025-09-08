@@ -1,6 +1,7 @@
 import * as mongoose from "mongoose";
 import Customer from "../models/customers.model.js"
 import Order from "../models/orders.model.js";
+import crypto from "crypto";
 
 const createCustomerService = async (req, res) => {
   const { name, email, age } = req.body;
@@ -105,6 +106,20 @@ const getListOrderByCustomerIdService = async (req, res) => {
   }
 }
 
+
+const genApiKeyCustomerService = async (req, res) => {
+  const { id } = req.params;
+  const customer = await Customer.findById(id);
+  if (!customer) {
+    return res.status(404).send({ data: null, status: false, message: "Customer not found." })
+  }
+  const randomStringApiKey = crypto.randomBytes(32).toString("hex");
+  const formatApiKey = `web-${id}$-${customer.email}-${randomStringApiKey}$`;
+  customer.apiKey = formatApiKey;
+  await customer.save();
+  return res.status(200).send({ data: customer, status: true, message: "Success." });
+}
+
 export const CustomerService = {
   createCustomerService,
   getCustomersService,
@@ -112,4 +127,5 @@ export const CustomerService = {
   updateCustomerService,
   deleteCustomerService,
   getListOrderByCustomerIdService,
+  genApiKeyCustomerService,
 };

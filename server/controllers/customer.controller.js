@@ -24,6 +24,10 @@ const getListOrderByCustomerId = (req, res) => {
   return CustomerService.getListOrderByCustomerIdService(req, res);
 }
 
+const genApiKeyCustomer = (req, res) => {
+  return CustomerService.genApiKeyCustomerService(req, res);
+}
+
 export const CustomerController = {
   createNewCustomer,
   getAllCustomers,
@@ -31,4 +35,5 @@ export const CustomerController = {
   updateCustomer,
   deleteCustomer,
   getListOrderByCustomerId,
+  genApiKeyCustomer,
 }
