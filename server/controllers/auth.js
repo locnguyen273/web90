@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import Account from "../models/account.js";
+import Manager from "../models/manager.js";
 
 const registerController = async (req, res) => {
   try {
@@ -20,6 +21,16 @@ const registerController = async (req, res) => {
       password: hashedPassword,
       role: role || "customer",
     });
+
+    if (role === "manager") {
+      await Manager.create({
+        accountId: newAccount._id,
+        email: email,
+        name: "",
+        phone: "",
+        department: "",
+      });
+    }
     res
       .status(201)
       .json({ message: "Account created successfully.", data: newAccount });
@@ -48,8 +59,8 @@ const loginController = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN || "3d",
     });
     res.status(201).json({
-        token: token,
-        data: { id: account._id, email: account.email, role: account.role },
+      token: token,
+      data: { id: account._id, email: account.email, role: account.role },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
