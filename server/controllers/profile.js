@@ -68,8 +68,7 @@ export const createProfileController = async (req, res) => {
       return res.status(201).json({ data: manager });
     }
 
-    if (account.role === "employee") {
-      const existed = await Employee.findOne({ accountId: account._id });
+    if (account.role === "employee") {      const existed = await Employee.findOne({ accountId: account._id });
       if (existed)
         return res.status(400).json({ message: "Profile employee existed." });
       const { name, phone, department, managerId } = req.body;
